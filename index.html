@@ -1,0 +1,484 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f4f6f9">
+  <title>가좌고등학교 InfoBoard</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root { --ink:#1b2230; --muted:#6f7b8d; --line:#e9edf2; --lime:#78cbff; --cyan:#a3f2ff; --night:#080e1d; }
+    * { box-sizing:border-box; }
+    body { min-width:320px; min-height:100vh; margin:0; color:var(--ink); font-family:"Noto Sans KR","Pretendard",Arial,sans-serif; background:#f4f6f9; }
+    .dashboard { width:min(100% - 32px,880px); margin:0 auto; padding:56px 0 38px; }
+    .app-header { margin-bottom:27px; }
+    .app-header h1 { margin:0; font-size:clamp(2.1rem,7vw,3.8rem); letter-spacing:-.08em; line-height:1.15; }
+    .app-header > p:last-child { margin:11px 0 0; color:var(--muted); font-size:1.04rem; font-weight:500; }
+    .eyebrow,.section-label { margin:0 0 7px; color:var(--muted); font-size:.74rem; font-weight:800; letter-spacing:.09em; text-transform:uppercase; }
+    .card { border:1px solid var(--line); border-radius:26px; background:#fff; box-shadow:0 10px 26px rgba(25,31,40,.06); }
+    .time-card { display:grid; gap:15px; padding:27px; }
+    .date { margin:0; color:var(--muted); font-size:1.08rem; font-weight:700; }
+    .clock { margin:0; color:#202938; font-family:ui-monospace,"SFMono-Regular",Consolas,monospace; font-size:clamp(3rem,13vw,6rem); font-weight:800; letter-spacing:-.1em; line-height:1; font-variant-numeric:tabular-nums; }
+    .info-rotator { display:grid; min-height:315px; margin-top:18px; }
+    .info-slide { grid-area:1 / 1; min-height:315px; opacity:0; pointer-events:none; transform:translate3d(0,10px,0) scale(.99); will-change:opacity,transform; backface-visibility:hidden; transition:opacity .56s cubic-bezier(.22,1,.36,1),transform .56s cubic-bezier(.22,1,.36,1); }
+    .info-slide.is-active { opacity:1; pointer-events:auto; transform:translate3d(0,0,0) scale(1); }
+    .billboard { position:relative; display:flex; flex-direction:column; overflow:hidden; padding:27px; border-radius:26px; color:var(--lime); background:var(--night); box-shadow:0 16px 34px rgba(7,18,39,.24); }
+    .billboard::before { position:absolute; inset:0; pointer-events:none; background-image:radial-gradient(rgba(120,203,255,.22) .8px,transparent .9px); background-size:5px 5px; content:""; opacity:.42; }
+    .billboard > * { position:relative; }
+    .billboard-topline,.card-heading { display:flex; align-items:flex-start; justify-content:space-between; gap:15px; }
+    .weather-board .section-label { color:#b1dcff; }
+    .live-badge { padding:5px 8px; border-radius:7px; color:var(--night); background:var(--lime); font-size:.68rem; font-weight:800; letter-spacing:.08em; }
+    .weather-reading { display:flex; align-items:center; gap:17px; margin:21px 0; }
+    .weather-icon { display:grid; flex:0 0 auto; place-items:center; width:68px; height:68px; border:1px solid rgba(120,203,255,.4); border-radius:20px; background:rgba(255,255,255,.07); font-size:2.2rem; }
+    .temperature { margin:0; color:var(--lime); font-family:ui-monospace,"SFMono-Regular",Consolas,monospace; font-size:clamp(3.8rem,13vw,6.3rem); font-weight:800; letter-spacing:-.14em; line-height:.8; text-shadow:0 0 13px rgba(120,203,255,.54); }
+    .condition { margin:11px 0 0; color:#f0f6ff; font-size:1.06rem; font-weight:700; }
+    .weather-metrics { display:flex; gap:24px; margin:0; }
+    .weather-metrics div { display:flex; align-items:baseline; gap:7px; }
+    .weather-metrics dt { color:#a4b7d2; font-size:.82rem; font-weight:700; }
+    .weather-metrics dd { margin:0; color:var(--cyan); font-family:ui-monospace,"SFMono-Regular",Consolas,monospace; font-size:1.1rem; font-weight:800; }
+    .safety-message { width:max-content; max-width:100%; margin:20px 0 0; padding:8px 11px; border:1px solid rgba(163,242,255,.25); border-radius:10px; color:#c9f4ff; background:rgba(120,203,255,.09); font-size:.84rem; font-weight:700; line-height:1.45; }
+    .ticker { overflow:hidden; margin-top:auto; padding-top:13px; border-top:1px solid rgba(255,255,255,.15); white-space:nowrap; }
+    .ticker p { display:inline-block; min-width:100%; margin:0; color:var(--cyan); font-family:ui-monospace,"SFMono-Regular",Consolas,monospace; font-size:.78rem; letter-spacing:.03em; animation:ticker 16s linear infinite; }
+    @keyframes ticker { from { transform:translateX(0); } to { transform:translateX(-30%); } }
+    .meal-card { display:flex; flex-direction:column; padding:27px; color:#eff6ff; background:#10244d; border-color:rgba(138,247,255,.2); box-shadow:0 16px 34px rgba(10,38,82,.2); }
+    .meal-card .section-label,.meal-date,.meal-card .status-text { color:var(--cyan); }
+    h2 { margin:0; color:#fff; font-size:clamp(1.45rem,4vw,1.9rem); letter-spacing:-.05em; }
+    .meal-date { flex:0 0 auto; font-family:ui-monospace,"SFMono-Regular",Consolas,monospace; font-size:.88rem; font-weight:800; }
+    .meal-list { display:grid; align-content:center; flex:1; gap:8px; margin:13px 0; padding-left:1.2rem; color:#f0f6ff; font-size:1.04rem; font-weight:600; line-height:1.45; }
+    .meal-list li::marker { color:var(--cyan); }
+    .status-text { min-height:1.3rem; margin:0; font-size:.86rem; }
+    .slide-indicator { display:flex; justify-content:center; gap:7px; margin-top:14px; }
+    .slide-indicator span { width:7px; height:7px; border-radius:999px; background:#c7ced8; transition:width .3s ease,background .3s ease; }
+    .slide-indicator span.is-active { width:25px; background:#38598a; }
+    @media (min-width:720px) { .dashboard { padding-top:72px; } .card,.billboard { border-radius:30px; } .time-card,.billboard,.meal-card { padding:33px; } .time-card { grid-template-columns:1fr auto; align-items:end; } }
+    @media (max-width:420px) { .dashboard { width:min(100% - 24px,880px); padding-top:30px; } .card,.billboard { border-radius:21px; } .time-card,.billboard,.meal-card { padding:22px; } .weather-icon { width:57px; height:57px; font-size:2rem; } }
+    /* Toss의 여백감 위에 LED 전광판을 얹은 단일 파일 테마 */
+    body {
+      background:
+        radial-gradient(circle at 8% 3%, rgba(82, 142, 255, .15), transparent 24rem),
+        radial-gradient(circle at 93% 16%, rgba(138, 247, 255, .14), transparent 22rem),
+        #f3f6fb;
+    }
+    .dashboard { width:min(100% - 40px, 1080px); padding:46px 0 48px; }
+    .app-header { display:grid; gap:11px; margin-bottom:22px; }
+    .eyebrow {
+      display:inline-flex;
+      align-items:center;
+      width:max-content;
+      margin:0;
+      padding:7px 11px;
+      border:1px solid #dce7f8;
+      border-radius:999px;
+      color:#3177dc;
+      background:rgba(255,255,255,.78);
+      box-shadow:0 6px 16px rgba(41,89,155,.07);
+    }
+    .app-header h1 { font-size:clamp(2.4rem, 6.2vw, 4.7rem); letter-spacing:-.085em; }
+    .app-header > p:last-child { margin:0; }
+    .time-card {
+      position:relative;
+      overflow:hidden;
+      grid-template-columns:1fr auto;
+      align-items:center;
+      min-height:174px;
+      padding:30px 34px;
+      border:1px solid rgba(138,247,255,.22);
+      border-radius:30px;
+      color:#ecf7ff;
+      background:linear-gradient(135deg, #0b1935 0%, #080e1d 56%, #102d43 100%);
+      box-shadow:0 24px 42px rgba(11,33,72,.24);
+    }
+    .time-card::before {
+      position:absolute;
+      inset:0;
+      pointer-events:none;
+      background-image:radial-gradient(rgba(138,247,255,.2) .8px, transparent .9px);
+      background-size:6px 6px;
+      content:"";
+      opacity:.45;
+    }
+    .time-card > * { position:relative; }
+    .time-card .section-label { color:#96c5ff; }
+    .date { color:#cbd8e8; }
+    .clock {
+      color:var(--lime);
+      font-size:clamp(3.2rem, 10.5vw, 7.4rem);
+      text-shadow:0 0 11px rgba(120,203,255,.48), 0 0 30px rgba(120,203,255,.2);
+    }
+    .info-rotator { min-height:350px; margin-top:20px; }
+    .info-slide { min-height:350px; }
+    .billboard,
+    .meal-card { border-radius:30px; }
+    .billboard { padding:32px 34px; }
+    .weather-reading { margin:27px 0 25px; }
+    .weather-icon { width:78px; height:78px; border-radius:24px; }
+    .weather-metrics { gap:30px; }
+    .meal-card {
+      position:relative;
+      overflow:hidden;
+      padding:32px 34px;
+      background:linear-gradient(135deg, #fff 0%, #f6faff 100%);
+      border-color:#e1eaf7;
+      color:var(--ink);
+      box-shadow:0 18px 36px rgba(30,74,132,.12);
+    }
+    .meal-card::after {
+      position:absolute;
+      right:-62px;
+      bottom:-78px;
+      width:240px;
+      height:240px;
+      border-radius:50%;
+      background:radial-gradient(circle, rgba(68,145,255,.17), rgba(138,247,255,0) 68%);
+      content:"";
+    }
+    .meal-card > * { position:relative; z-index:1; }
+    .meal-card .section-label { color:#4d80bf; }
+    .meal-card h2 { color:#162442; font-size:clamp(1.8rem,4vw,2.35rem); }
+    .meal-date { padding:7px 10px; border-radius:10px; color:#3575d4; background:#eaf3ff; }
+    .meal-list { color:#34445d; font-size:clamp(1.05rem,2vw,1.24rem); }
+    .meal-list li::marker { color:#377de4; }
+    .meal-card .status-text { color:#6b7e9b; }
+    .slide-indicator { margin-top:16px; }
+    .slide-indicator span { width:8px; height:8px; background:#c5d3e8; }
+    .slide-indicator span.is-active { width:31px; background:#246fd3; }
+    @media (max-width:620px) {
+      .dashboard { width:min(100% - 24px, 1080px); padding-top:28px; }
+      .time-card { grid-template-columns:1fr; align-items:start; min-height:0; padding:26px 23px; }
+      .clock { font-size:clamp(3.15rem, 17vw, 5.5rem); }
+      .billboard, .meal-card { padding:25px 23px; border-radius:24px; }
+      .info-rotator, .info-slide { min-height:330px; }
+    }
+    @media (prefers-reduced-motion:reduce) { .info-slide,.slide-indicator span { transition:none; } .ticker p { animation:none; } }
+  </style>
+</head>
+<body>
+  <main class="dashboard" aria-label="가좌고등학교 InfoBoard">
+    <header class="app-header">
+      <p class="eyebrow">가좌고등학교</p>
+      <h1>InfoBoard</h1>
+      <p>필요한 소식을 한눈에 확인하세요.</p>
+    </header>
+
+    <section class="card time-card" aria-labelledby="time-title">
+      <div>
+        <p class="section-label" id="time-title">날짜 및 시간</p>
+        <p class="date" id="dateText">----년 --월 --일</p>
+      </div>
+      <p class="clock" id="clockText">--:--:--</p>
+    </section>
+
+    <section class="info-rotator" aria-label="날씨와 급식 정보">
+      <article class="billboard weather-board info-slide is-active" aria-hidden="false">
+        <div class="billboard-topline">
+          <p class="section-label">현재 날씨 · 일산서구 가좌동</p>
+          <span class="live-badge">현재</span>
+        </div>
+        <div class="weather-reading">
+          <span class="weather-icon" id="weatherIcon" aria-hidden="true">☀️</span>
+          <div>
+            <p class="temperature" id="temperature">--°</p>
+            <p class="condition" id="condition">날씨 정보를 불러오는 중</p>
+          </div>
+        </div>
+        <dl class="weather-metrics" aria-label="상세 날씨">
+          <div><dt>체감</dt><dd id="feelsLike">--°</dd></div>
+          <div><dt>습도</dt><dd id="humidity">--%</dd></div>
+        </dl>
+        <p class="safety-message" id="safetyMessage" role="status">날씨 정보를 확인한 뒤 안전 안내를 알려드릴게요.</p>
+        <div class="ticker"><p id="weatherStatus">날씨 정보를 불러오는 중입니다.</p></div>
+      </article>
+
+      <article class="card meal-card info-slide" aria-hidden="true">
+        <div class="card-heading">
+          <div>
+            <p class="section-label">학교 급식</p>
+            <h2>오늘의 급식</h2>
+          </div>
+          <span class="meal-date" id="mealDate"></span>
+        </div>
+        <ul class="meal-list" id="mealList" aria-live="polite"><li>급식 정보를 불러오는 중입니다.</li></ul>
+        <p class="status-text" id="mealStatus" role="status"></p>
+      </article>
+    </section>
+    <div class="slide-indicator" aria-hidden="true"><span class="is-active"></span><span></span></div>
+  </main>
+
+  <script>
+    "use strict";
+
+    const ROTATION_INTERVAL = 10 * 1000;
+    const NAVER_WEATHER_URL = "https://weather.naver.com/today/02287106";
+    const SCHOOL_URL = "https://gajwa-h.goegy.kr/gajwa-h/main.do";
+
+    /*
+     * 단일 HTML에서는 네이버·학교 사이트의 CORS 정책을 우회할 수 없습니다.
+     * 직접 운영하는 프록시가 있다면 아래 주소에 넣으세요. 프록시는 요청 URL을
+     * `?url=` 쿼리로 받아 원문 HTML을 그대로 반환해야 합니다.
+     */
+    const DATA_PROXY_URL = "";
+
+    const weatherFallback = {
+      temperature: null,
+      feelsLike: null,
+      humidity: null,
+      condition: "날씨 정보를 확인할 수 없어요.",
+      weatherCode: null
+    };
+
+    const mealFallback = {
+      date: koreaDateISO(),
+      menu: ["급식 정보를 불러오지 못했습니다."]
+    };
+
+    function pad(value) {
+      return String(value).padStart(2, "0");
+    }
+
+    function koreaDateParts(date = new Date()) {
+      const parts = new Intl.DateTimeFormat("en-CA", {
+        timeZone: "Asia/Seoul",
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+        hour: "2-digit",
+        minute: "2-digit",
+        second: "2-digit",
+        hourCycle: "h23"
+      }).formatToParts(date).reduce((result, part) => {
+        if (part.type !== "literal") result[part.type] = part.value;
+        return result;
+      }, {});
+
+      return parts;
+    }
+
+    function koreaDateISO() {
+      const { year, month, day } = koreaDateParts();
+      return `${year}-${month}-${day}`;
+    }
+
+    function updateDateTime() {
+      const { year, month, day, hour, minute, second } = koreaDateParts();
+      document.getElementById("dateText").textContent = `${year}년 ${month}월 ${day}일`;
+      document.getElementById("clockText").textContent = `${hour}:${minute}:${second}`;
+    }
+
+    function weatherIconFor(weatherCode, condition) {
+      if (weatherCode >= 7 && weatherCode <= 10) return "🌧️";
+      if (weatherCode >= 11 && weatherCode <= 13) return "❄️";
+      if (condition.includes("흐림")) return "☁️";
+      if (condition.includes("구름")) return "⛅";
+      return "☀️";
+    }
+
+    function formatTemperature(value) {
+      return Number.isFinite(value) ? `${Math.round(value)}°` : "--°";
+    }
+
+    function safetyMessageFor(weather) {
+      const { temperature, condition = "", weatherCode } = weather;
+
+      // 기온을 먼저 판단해 학생들이 바로 행동할 수 있는 한파·폭염 안내를 우선합니다.
+      if (Number.isFinite(temperature) && temperature <= -10) {
+        return "한파 주의 · 외투와 장갑을 착용하고, 등교길 미끄럼을 조심하세요.";
+      }
+      if (Number.isFinite(temperature) && temperature <= 0) {
+        return "추위 주의 · 체온을 유지할 수 있도록 따뜻하게 입으세요.";
+      }
+      if (Number.isFinite(temperature) && temperature >= 33) {
+        return "폭염 주의 · 물을 자주 마시고 야외 활동은 가급적 줄이세요.";
+      }
+      if (Number.isFinite(temperature) && temperature >= 28) {
+        return "더위 주의 · 충분한 수분 섭취와 휴식을 챙기세요.";
+      }
+      if (weatherCode >= 11 && weatherCode <= 13 || condition.includes("눈")) {
+        return "눈길 주의 · 미끄러운 길에서는 천천히 안전하게 이동하세요.";
+      }
+      if (weatherCode >= 7 && weatherCode <= 10 || condition.includes("비")) {
+        return "비 오는 날 · 우산을 챙기고 젖은 바닥을 조심하세요.";
+      }
+      return "안전한 하루 · 이동할 때 주변을 살피고 보행 안전을 지켜주세요.";
+    }
+
+    function renderWeather(data, state = "ready") {
+      const isLoading = state === "loading";
+      const isError = state === "error";
+      document.getElementById("temperature").textContent = formatTemperature(data.temperature);
+      document.getElementById("feelsLike").textContent = formatTemperature(data.feelsLike);
+      document.getElementById("humidity").textContent = Number.isFinite(data.humidity) ? `${data.humidity}%` : "--%";
+      document.getElementById("condition").textContent = data.condition;
+      document.getElementById("weatherIcon").textContent = weatherIconFor(data.weatherCode, data.condition);
+      document.getElementById("safetyMessage").textContent = isLoading
+        ? "날씨 정보를 확인한 뒤 안전 안내를 알려드릴게요."
+        : isError
+          ? "날씨 정보 연결을 확인하는 중입니다. 이동할 때 주변을 살펴주세요."
+          : safetyMessageFor(data);
+      document.getElementById("weatherStatus").textContent = isLoading
+        ? "네이버 날씨 정보를 불러오는 중입니다."
+        : isError
+          ? "날씨 연결을 확인할 수 없습니다. 잠시 후 다시 시도합니다."
+          : `${data.observedAt} · ${data.location}`;
+    }
+
+    function requestUrl(targetUrl) {
+      return DATA_PROXY_URL
+        ? `${DATA_PROXY_URL}${DATA_PROXY_URL.includes("?") ? "&" : "?"}url=${encodeURIComponent(targetUrl)}`
+        : targetUrl;
+    }
+
+    async function fetchText(targetUrl) {
+      const controller = new AbortController();
+      const timeoutId = window.setTimeout(() => controller.abort(), 8000);
+
+      try {
+        const response = await fetch(requestUrl(targetUrl), {
+          cache: "no-store",
+          signal: controller.signal
+        });
+        if (!response.ok) throw new Error(`요청 실패: ${response.status}`);
+        return await response.text();
+      } finally {
+        window.clearTimeout(timeoutId);
+      }
+    }
+
+    function extractNaverWeatherData(html) {
+      const documentFragment = new DOMParser().parseFromString(html, "text/html");
+      let weatherPayload;
+
+      // 네이버 화면은 현재 예보를 스크립트의 blockApiResult에 담아 전달합니다.
+      for (const script of documentFragment.querySelectorAll("script")) {
+        const match = (script.textContent || "").match(/var blockApiResult\s*=\s*([\s\S]*?);\s*\n/);
+        if (match) {
+          try {
+            weatherPayload = JSON.parse(match[1]);
+            break;
+          } catch (_) {
+            // 형식이 바뀐 스크립트는 건너뛰고 다음 스크립트를 확인합니다.
+          }
+        }
+      }
+
+      const result = weatherPayload?.results?.choiceResult;
+      const nowForecast = Object.entries(result || {})
+        .find(([key]) => key.startsWith("nowSynthesisFcast"))?.[1]?.nowFcast;
+
+      if (!nowForecast) throw new Error("현재 날씨 데이터를 찾지 못했습니다.");
+      return nowForecast;
+    }
+
+    function formatNaverWeatherTime(value) {
+      const time = String(value || "");
+      return /^\d{10}$/.test(time) ? `${time.slice(8, 10)}:00` : "최신";
+    }
+
+    async function fetchGajwaWeatherData() {
+      renderWeather({ ...weatherFallback, condition: "날씨 정보를 불러오는 중" }, "loading");
+      try {
+        const weather = extractNaverWeatherData(await fetchText(NAVER_WEATHER_URL));
+        renderWeather({
+          temperature: Number(weather.tmpr),
+          feelsLike: Number(weather.stmpr),
+          humidity: Number(weather.humd),
+          condition: weather.wetrTxt || "날씨 정보 없음",
+          weatherCode: Number(weather.wetrCd),
+          location: "경기도 고양시 일산서구 가좌동",
+          observedAt: `${formatNaverWeatherTime(weather.aplYmdt)} 기준`
+        });
+      } catch (error) {
+        console.warn("날씨 데이터를 가져오지 못했습니다.", error);
+        renderWeather(weatherFallback, "error");
+      }
+    }
+
+    function cleanMenuItem(text) {
+      return text
+        .replace(/\([^)]*\)/g, "")
+        .replace(/\[[^\]]*\]/g, "")
+        .replace(/^Kcal\s*/i, "")
+        .replace(/\s+/g, " ")
+        .trim();
+    }
+
+    function extractMealFromText(text) {
+      const normalized = text.replace(/\r/g, "\n").replace(/\t/g, " ");
+      const lunchMatch = normalized.match(/(?:중식|점심|오늘의\s*급식|급식)([\s\S]{0,900})(?:석식|조식|알레르기|원산지|영양|$)/);
+      const source = lunchMatch ? lunchMatch[1] : normalized;
+
+      return source
+        .split(/\n|<br\s*\/?>|·|,|\s{2,}/i)
+        .map(cleanMenuItem)
+        .filter(Boolean)
+        .filter((item) => !/(중식|점심|오늘의\s*급식|급식|알레르기|원산지|영양|더보기|Image)/.test(item))
+        .slice(0, 12);
+    }
+
+    function extractMeal(html) {
+      const documentFragment = new DOMParser().parseFromString(html, "text/html");
+      documentFragment.querySelectorAll("script, style, nav, header, footer, iframe, noscript").forEach((node) => node.remove());
+      const selectors = ["[class*=meal]", "[id*=meal]", "[class*=food]", "[id*=food]", "[class*=lunch]", "[id*=lunch]", "[class*=diet]", "[id*=diet]", ".meal_menu", ".today_meal"];
+
+      for (const selector of selectors) {
+        const menu = extractMealFromText(documentFragment.querySelector(selector)?.textContent || "");
+        if (menu.length) return menu;
+      }
+      return extractMealFromText(documentFragment.body.textContent || "");
+    }
+
+    function renderMeal(data) {
+      const menu = Array.isArray(data.menu) && data.menu.length ? data.menu : mealFallback.menu;
+      document.getElementById("mealDate").textContent = data.date || mealFallback.date;
+      document.getElementById("mealList").replaceChildren(...menu.map((item) => {
+        const listItem = document.createElement("li");
+        listItem.textContent = item;
+        return listItem;
+      }));
+      document.getElementById("mealStatus").textContent = data.error ? "급식 정보를 불러오지 못했습니다." : "";
+    }
+
+    async function fetchMeal() {
+      try {
+        const menu = extractMeal(await fetchText(SCHOOL_URL));
+        if (!menu.length) throw new Error("급식 메뉴를 찾지 못했습니다.");
+        renderMeal({ date: koreaDateISO(), menu });
+      } catch (error) {
+        console.warn("급식 데이터를 가져오지 못했습니다.", error);
+        renderMeal({ ...mealFallback, error: true });
+      }
+    }
+
+    function startInfoRotation() {
+      if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+
+      const slides = [...document.querySelectorAll(".info-slide")];
+      const indicators = [...document.querySelectorAll(".slide-indicator span")];
+      let activeIndex = 0;
+
+      window.setInterval(() => {
+        activeIndex = (activeIndex + 1) % slides.length;
+        slides.forEach((slide, index) => {
+          const isActive = index === activeIndex;
+          slide.classList.toggle("is-active", isActive);
+          slide.setAttribute("aria-hidden", String(!isActive));
+          indicators[index].classList.toggle("is-active", isActive);
+        });
+      }, ROTATION_INTERVAL);
+    }
+
+    function init() {
+      updateDateTime();
+      fetchGajwaWeatherData();
+      fetchMeal();
+      startInfoRotation();
+      window.setInterval(updateDateTime, 1000);
+      window.setInterval(fetchGajwaWeatherData, 10 * 60 * 1000);
+      window.setInterval(fetchMeal, 30 * 60 * 1000);
+    }
+
+    document.addEventListener("DOMContentLoaded", init);
+  </script>
+</body>
+</html>
