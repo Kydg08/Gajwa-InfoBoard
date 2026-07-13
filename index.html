@@ -38,7 +38,9 @@
     .weather-metrics div { display:flex; align-items:baseline; gap:7px; }
     .weather-metrics dt { color:#a4b7d2; font-size:.82rem; font-weight:700; }
     .weather-metrics dd { margin:0; color:var(--cyan); font-family:ui-monospace,"SFMono-Regular",Consolas,monospace; font-size:1.1rem; font-weight:800; }
-    .safety-message { width:max-content; max-width:100%; margin:20px 0 0; padding:8px 11px; border:1px solid rgba(163,242,255,.25); border-radius:10px; color:#c9f4ff; background:rgba(120,203,255,.09); font-size:.84rem; font-weight:700; line-height:1.45; }
+    .safety-message { display:grid; grid-template-columns:auto 1fr; align-items:center; gap:12px; width:100%; margin:0 0 20px; padding:14px 16px; border:1px solid rgba(163,242,255,.42); border-radius:16px; color:#e8faff; background:linear-gradient(100deg,rgba(37,137,222,.38),rgba(120,203,255,.16)); box-shadow:inset 0 1px rgba(255,255,255,.11),0 8px 20px rgba(14,94,172,.16); font-size:clamp(.94rem,2vw,1.12rem); font-weight:800; line-height:1.45; }
+    .safety-label { display:inline-flex; align-items:center; align-self:stretch; padding-right:12px; border-right:1px solid rgba(163,242,255,.32); color:var(--cyan); font-family:ui-monospace,"SFMono-Regular",Consolas,monospace; font-size:.72em; font-weight:900; letter-spacing:.08em; white-space:nowrap; }
+    .safety-message strong { color:#fff; text-shadow:0 0 14px rgba(163,242,255,.2); }
     .ticker { overflow:hidden; margin-top:auto; padding-top:13px; border-top:1px solid rgba(255,255,255,.15); white-space:nowrap; }
     .ticker p { display:inline-block; min-width:100%; margin:0; color:var(--cyan); font-family:ui-monospace,"SFMono-Regular",Consolas,monospace; font-size:.78rem; letter-spacing:.03em; animation:ticker 16s linear infinite; }
     @keyframes ticker { from { transform:translateX(0); } to { transform:translateX(-30%); } }
@@ -183,11 +185,14 @@
             <p class="condition" id="condition">날씨 정보를 불러오는 중</p>
           </div>
         </div>
+        <div class="safety-message" role="status">
+          <span class="safety-label">안전 안내</span>
+          <strong id="safetyMessage">날씨 정보를 확인한 뒤 안전 안내를 알려드릴게요.</strong>
+        </div>
         <dl class="weather-metrics" aria-label="상세 날씨">
           <div><dt>체감</dt><dd id="feelsLike">--°</dd></div>
           <div><dt>습도</dt><dd id="humidity">--%</dd></div>
         </dl>
-        <p class="safety-message" id="safetyMessage" role="status">날씨 정보를 확인한 뒤 안전 안내를 알려드릴게요.</p>
         <div class="ticker"><p id="weatherStatus">날씨 정보를 불러오는 중입니다.</p></div>
       </article>
 
